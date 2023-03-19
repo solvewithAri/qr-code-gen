@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>QR Code Generator</title>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="wrapper">
+        <h1>QR Code Generator/Reader</h1>
+        <form id="qrcode-form" enctype="multipart/form-data">
+            <p>Enter data for QR Code Generate</p>
+            <input type="text" id="data" name="data" placeholder="https://www.youtube.com/@SolveWithAriP">
+            <br>
+            <button type="button" class="collapsible">Customise QR</button>
+            <div class="content">
+
+                <button type="button" class="collapsible">QR Body</button>
+    
+                <div class="content">
+                    <br>
+                    <input type="color" name="qr_color" id="qr_color" value="#000000" required>
+                    <input type="color" name="qr_g_color" id="qr_g_color" value="#000000" required>
+                    <select id="qr_md" name="qr_md">
+                        <option value="rmd">RMD</option>
+                        <option value="cmd">CMD</option>
+                        <option value="rmd">SMD</option>
+                        <option value="cmd">VMD</option>
+                        <option value="rmd">HMD</option>
+                    </select>
+                </div>
+                <br>
+                <button type="button" class="collapsible">Background Color</button>
+    
+                <div class="content">
+
+                    <input type="range" min="0" max="255" step="1" value="250" id="bg_opacity" required>
+                    <input type="color" name="bg_color" id="bg_color" value="#ffffff" required>
+                </div>
+                <br>
+                <button type="button" class="collapsible">QR Eye</button>
+    
+                <div class="content">
+
+                    <button type="button" class="collapsible">Outer</button>
+    
+                    <div class="content">
+    
+                        <input type="color" name="qr_outer_e_col" id="qr_outer_e_col" value="#000000" required>
+                        <select id="outer_eye_md" name="outer_eye_md">
+                            <option value="rmd">RMD</option>
+                            <option value="cmd">CMD</option>
+                            <option value="rmd">SMD</option>
+                            <option value="cmd">VMD</option>
+                            <option value="rmd">HMD</option>
+                        </select>
+                    </div>                    
+                    <button type="button" class="collapsible">Inner</button>
+    
+                    <div class="content">
+    
+                        <input type="color" name="qr_inner_e_col" id="qr_inner_e_col" value="#000000" required>
+                        <select id="innereye_md" name="innereye_md">
+                            <option value="rmd">RMD</option>
+                            <option value="cmd">CMD</option>
+                            <option value="rmd">SMD</option>
+                            <option value="cmd">VMD</option>
+                            <option value="rmd">HMD</option>
+                        </select>
+                    </div>                      
+            </div>
+
+            <button type="button" class="collapsible">Choose Image</button>
+    
+            <div class="content">
+                <br>
+                <input type="file" name="image" id="image">
+            </div>
+            </div>
+
+            <br>
+            <button type="submit" id="generate-button">Generate QR Code</button>
+            <br>
+            <button type="submit" id="read-button">Read QR Code</button>
+        </form>
+        <div id="qrcode-container"></div>
+
+        <script>
+            const form = document.getElementById('qrcode-form');
+            const container = document.getElementById('qrcode-container');
+            const generateButton = document.getElementById('generate-button');
+            const readButton = document.getElementById('read-button');
+
+            var coll = document.getElementsByClassName("collapsible");
+            var i;
+
+            for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                content.style.display = "none";
+                } else {
+                content.style.display = "block";
+                }
+            });
+            }
+
+            generateButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                const data = document.getElementById('data').value;
+                const qr_color = document.getElementById('qr_color').value;
+                const qr_g_color = document.getElementById('qr_g_color').value;
+                const bg_color = document.getElementById('bg_color').value;
+                const bg_opacity = document.getElementById('bg_opacity').value;
+                const qr_outer_e_col = document.getElementById('qr_outer_e_col').value;
+                const qr_inner_e_col = document.getElementById('qr_inner_e_col').value;
+                const qr_md = document.getElementById('qr_md').value;
+                const outer_eye_md = document.getElementById('outer_eye_md').value;
+                const innereye_md = document.getElementById('innereye_md').value;
+                const image = document.getElementById('image').files[0];
+
+                const formData = new FormData();
+                formData.append('data', data);
+                formData.append('qr_color', qr_color);
+                formData.append('qr_g_color', qr_g_color);
+                formData.append('bg_color', bg_color);
+                formData.append('bg_opacity', bg_opacity);
+                formData.append('qr_outer_e_col', qr_outer_e_col);
+                formData.append('qr_inner_e_col', qr_inner_e_col);
+                formData.append('qr_md', qr_md);
+                formData.append('outer_eye_md', outer_eye_md);
+                formData.append('innereye_md', innereye_md);
+                formData.append('image', image);
+
+                fetch('/qrcode', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    const objectUrl = URL.createObjectURL(blob);
+                    container.innerHTML = `
+                        <div style="position: relative;">
+                            <img src="${objectUrl}">
+                        </div>
+                        <div style="position: relative;">
+                            <button type="submit" onclick="downloadQRCode()">Download QR Code</button>
+                        </div>
+                    `;
+                });
+            });
+
+            readButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                const image = document.getElementById('image').files[0];
+
+                const formData = new FormData();
+                formData.append('image', image);
+
+                fetch('/readqrcode', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    container.innerHTML = `
+                        <div>
+                            <p>Data: ${data.data}</p>
+                        </div>
+                    `;
+                });
+            });
+            function hexToRgb(hex) {
+                // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+                const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+
+                // Convert the HEX value to RGB
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            function downloadQRCode() {
+                const image = document.querySelector('#qrcode-container img');
+                const link = document.createElement('a');
+                link.download = 'qrcode.png';
+                link.href = image.src;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        </script>
+    </div>
+</body>
+</html>

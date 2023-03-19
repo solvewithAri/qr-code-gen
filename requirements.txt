@@ -1,0 +1,5 @@
+Flask
+qrcode
+gunicorn
+Pillow
+opencv-python-headless
